@@ -1,6 +1,6 @@
 package com.mmendoza.employee_system.bussines.services.impl;
 
-import com.mmendoza.employee_system.bussines.mappers.impl.EmployeeMapper;
+import com.mmendoza.employee_system.bussines.mappers.impl.EmployeeMapperImpl;
 import com.mmendoza.employee_system.bussines.services.IEmployeeService;
 import com.mmendoza.employee_system.bussines.validation.EmployeeValidation;
 import com.mmendoza.employee_system.bussines.validation.models.EmployeeValidateModel;
@@ -24,7 +24,7 @@ public class EmployeeServiceImpl implements IEmployeeService {
     private IEmployeeRepository employeeRepository;
 
     @Autowired
-    private EmployeeMapper employeeMapper;
+    private EmployeeMapperImpl employeeMapper;
 
     @Autowired
     private EmployeeValidation employeeValidation;
@@ -39,17 +39,21 @@ public class EmployeeServiceImpl implements IEmployeeService {
 
         employeeValidation.validateNameType(request);
 
-        if (request.equals("CONTRATADO")) {
-            return employeeMapper.toDTOAList(employeeRepository.getAllByContract(Contract.HIRED));
-        } else if (request.equals("EFECTIVO")) {
-            return employeeMapper.toDTOAList(employeeRepository.getAllByContract(Contract.EFFECTIVE));
-        }
+        List<EmployeeDto> response;
 
-        return this.getAllEmployees();
+        if (request.equals("CONTRATADO")) {
+            response = employeeMapper.toDTOAList(employeeRepository.getAllByContract(Contract.HIRED));
+        } else if (request.equals("EFECTIVO")) {
+            response = employeeMapper.toDTOAList(employeeRepository.getAllByContract(Contract.EFFECTIVE));
+        } else {
+            response = employeeMapper.toDTOAList(employeeRepository.findAll());
+        }
+        return response;
     }
 
     @Override
     public EmployeeDto findByDni(Integer dni) {
+        employeeValidation.validateDni(dni);
         return employeeMapper.toDTO(employeeRepository.findByDni(dni).orElseThrow(() -> new EmployeeException("")));
     }
 
@@ -67,7 +71,7 @@ public class EmployeeServiceImpl implements IEmployeeService {
         //validation of dni
         employeeValidation.validateDni(employee.getDni());
         this.employeeExist(employee.getDni());
-        
+
         Contract contract = this.getContractEmployee(employee.isHired());
 
         BigDecimal salary = this.getSalaryEmployee(employee.isHired());
@@ -115,6 +119,7 @@ public class EmployeeServiceImpl implements IEmployeeService {
 
     @Override
     public void deleteEmployee(Integer dni) {
+        employeeValidation.validateDni(dni);
         employeeRepository.deleteById(dni);
     }
 
