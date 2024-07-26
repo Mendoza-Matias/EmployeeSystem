@@ -20,34 +20,34 @@ public class EmployeesController {
 
     @GetMapping
     public ResponseEntity<List<EmployeeDto>> getAllEmployees() {
-        return ResponseEntity.ok(employeeService.getAllEmployees());
+        return ResponseEntity.status(HttpStatus.OK).body(employeeService.getAllEmployees());
     }
 
     @PostMapping
-    public ResponseEntity<List<EmployeeDto>> getAllEmployeesByContract(@RequestParam String type){
-        return ResponseEntity.ok(employeeService.getAllEmployeesByContract(type));
+    public ResponseEntity<List<EmployeeDto>> getAllEmployeesByContract(@RequestParam String type) {
+        return ResponseEntity.status(HttpStatus.OK).body(employeeService.getAllEmployeesByContract(type));
     }
 
     @GetMapping("dni")
     public ResponseEntity<EmployeeDto> findEmployeeByDni(@RequestParam Integer dni) {
-        return ResponseEntity.ok(employeeService.findByDni(dni));
+        return ResponseEntity.status(HttpStatus.OK).body(employeeService.findByDni(dni));
     }
 
     @PostMapping("create")
     public ResponseEntity<HttpStatus> createEmployee(@RequestBody EmployeeSaveDto employee) {
         employeeService.saveEmployee(employee);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PutMapping("update")
     public ResponseEntity<HttpStatus> updateEmployee(@RequestBody EmployeeUpdateDto employee) {
         employeeService.updateEmployee(employee);
-        return ResponseEntity.ok(HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("delete")
     public ResponseEntity<HttpStatus> deleteEmployee(@RequestParam Integer dni) {
         employeeService.deleteEmployee(dni);
-        return ResponseEntity.ok(HttpStatus.OK);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
