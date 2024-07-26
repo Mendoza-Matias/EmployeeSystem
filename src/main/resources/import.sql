@@ -1,0 +1,1 @@
+INSERT INTO employee(dni, name, last_name, salary, contract)VALUES(123, 'Juan', 'Perez', 2500.00, 'HIRED');
