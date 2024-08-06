@@ -30,5 +30,4 @@ public class EmployeeMapper implements IGenericMapper<Employee, EmployeeResponse
                         .build()
         ).collect(Collectors.toList());
     }
-
 }
