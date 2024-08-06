@@ -9,24 +9,26 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class EmployeeMapperImpl implements IGenericMapper<Employee, EmployeeDto> {
-
+public class EmployeeMapper implements IGenericMapper<Employee, EmployeeResponse> {
     @Override
-    public EmployeeDto toDTO(Employee ent) {
-        return EmployeeDto
-                .builder()
-                .name(ent.getName())
-                .lastName(ent.getLastName())
+    public EmployeeResponse toDto(Employee employee) {
+        return EmployeeResponse.builder()
+                .name(employee.getName())
+                .lastName(employee.getLastName())
+                .description(employee.getType().getDescription())
                 .build();
     }
 
     @Override
-    public List<EmployeeDto> toDTOAList(List<Employee> ent) {
-        return ent.stream().map(e ->
-                EmployeeDto.builder()
+    public List<EmployeeResponse> toDtoList(List<Employee> employee) {
+        return employee.stream().map(e ->
+                EmployeeResponse.
+                        builder()
                         .name(e.getName())
                         .lastName(e.getLastName())
-                        .dni(e.getDni())
-                        .build()).collect(Collectors.toList());
+                        .description(e.getType().getDescription())
+                        .build()
+        ).collect(Collectors.toList());
     }
+
 }
