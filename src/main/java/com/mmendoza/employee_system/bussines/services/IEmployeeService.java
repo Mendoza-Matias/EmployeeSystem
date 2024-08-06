@@ -1,32 +1,27 @@
 package com.mmendoza.employee_system.bussines.services;
 
-import com.mmendoza.employee_system.domain.dto.employee.EmployeeDto;
-import com.mmendoza.employee_system.domain.dto.employee.EmployeeSaveDto;
-import com.mmendoza.employee_system.domain.dto.employee.EmployeeUpdateDto;
-import com.mmendoza.employee_system.domain.entity.Employee;
-import com.mmendoza.employee_system.domain.enums.Contract;
-import jakarta.persistence.Entity;
+import com.mmendoza.employee_system.domain.dto.employee.EmployeeResponse;
+import com.mmendoza.employee_system.domain.dto.employee.SaveEmployeeRequest;
+import com.mmendoza.employee_system.domain.entity.EmployeeType;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 public interface IEmployeeService {
 
-    List<EmployeeDto> getAllEmployees();
+    List<EmployeeResponse> getAllEmployees();
 
-    List <EmployeeDto> getAllEmployeesByContract (String request);
+    void saveEmployee(SaveEmployeeRequest request);
 
-    EmployeeDto findByDni(Integer dni);
+    void updateEmployee(SaveEmployeeRequest request);
 
-    void saveEmployee(EmployeeSaveDto employee);
+    String deleteEmployee(String dni);
 
-    void updateEmployee(EmployeeUpdateDto employee);
+    void validateExistEmployee(String dni);
 
-    void deleteEmployee(Integer dni);
+    void validateFormatDni(String dni);
 
-    boolean employeeExist(Integer dni);
+    void validateField(String name, String lastName);
 
-    Contract getContractEmployee(boolean contract);
-
-    BigDecimal getSalaryEmployee(boolean type);
+    void validateRequest(SaveEmployeeRequest request);
 }

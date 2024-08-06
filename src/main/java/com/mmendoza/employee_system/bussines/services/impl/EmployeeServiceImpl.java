@@ -1,17 +1,17 @@
 package com.mmendoza.employee_system.bussines.services.impl;
 
-import com.mmendoza.employee_system.bussines.mappers.impl.EmployeeMapperImpl;
 import com.mmendoza.employee_system.bussines.services.IEmployeeService;
-import com.mmendoza.employee_system.bussines.validation.EmployeeValidation;
-import com.mmendoza.employee_system.bussines.validation.models.EmployeeValidateModel;
-import com.mmendoza.employee_system.domain.dto.employee.EmployeeDto;
-import com.mmendoza.employee_system.domain.dto.employee.EmployeeSaveDto;
-import com.mmendoza.employee_system.domain.dto.employee.EmployeeUpdateDto;
+import com.mmendoza.employee_system.bussines.services.mappers.impl.EmployeeMapper;
+import com.mmendoza.employee_system.domain.dto.employee.EmployeeResponse;
+import com.mmendoza.employee_system.domain.dto.employee.SaveEmployeeRequest;
 import com.mmendoza.employee_system.domain.entity.Employee;
-import com.mmendoza.employee_system.domain.enums.Contract;
+import com.mmendoza.employee_system.domain.entity.EmployeeType;
 import com.mmendoza.employee_system.domain.exception.EmployeeException;
+import com.mmendoza.employee_system.domain.exception.NotFoundException;
 import com.mmendoza.employee_system.persistence.repository.IEmployeeRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,121 +21,95 @@ import java.util.List;
 public class EmployeeServiceImpl implements IEmployeeService {
 
     @Autowired
-    private IEmployeeRepository employeeRepository;
+    private IEmployeeRepository repository;
 
     @Autowired
-    private EmployeeMapperImpl employeeMapper;
+    private TypeServiceImpl typeService;
 
     @Autowired
-    private EmployeeValidation employeeValidation;
+    private EmployeeMapper mapper;
 
     @Override
-    public List<EmployeeDto> getAllEmployees() {
-        return employeeMapper.toDTOAList(employeeRepository.findAll());
+    public List<EmployeeResponse> getAllEmployees() {
+        return mapper.toDtoList(repository.findAllWithTypes());
     }
 
     @Override
-    public List<EmployeeDto> getAllEmployeesByContract(String request) {
-
-        employeeValidation.validateNameType(request);
-
-        List<EmployeeDto> response;
-
-        if (request.equals("CONTRATADO")) {
-            response = employeeMapper.toDTOAList(employeeRepository.getAllByContract(Contract.HIRED));
-        } else if (request.equals("EFECTIVO")) {
-            response = employeeMapper.toDTOAList(employeeRepository.getAllByContract(Contract.EFFECTIVE));
-        } else {
-            response = employeeMapper.toDTOAList(employeeRepository.findAll());
-        }
-        return response;
+    public void saveEmployee(SaveEmployeeRequest request) {
+        this.validateRequest(request);
+        repository.save(Employee.
+                builder()
+                .dni(request.getDni())
+                .name(request.getName())
+                .lastName(request.getLastName())
+                .type(typeService.getType(request.isHired()))
+                .build());
     }
 
     @Override
-    public EmployeeDto findByDni(Integer dni) {
-        employeeValidation.validateDni(dni);
-        return employeeMapper.toDTO(employeeRepository.findByDni(dni).orElseThrow(() -> new EmployeeException("")));
-    }
-
-    @Override
-    public void saveEmployee(EmployeeSaveDto employee) {
-        //validation of fields
-        employeeValidation.validateFields(
-                EmployeeValidateModel.
-                        builder()
-                        .name(employee.getName())
-                        .lastName(employee.getLastName())
-                        .build()
-        );
-
-        //validation of dni
-        employeeValidation.validateDni(employee.getDni());
-        this.employeeExist(employee.getDni());
-
-        Contract contract = this.getContractEmployee(employee.isHired());
-
-        BigDecimal salary = this.getSalaryEmployee(employee.isHired());
-
-        Employee newEmployee = Employee.builder()
-                .name(employee.getName())
-                .lastName(employee.getLastName())
+    public void updateEmployee(SaveEmployeeRequest request) {
+        Employee employee = repository.findByDni(request.getDni()).orElseThrow(() -> new NotFoundException("employee not found"));
+        repository.deleteByDni(request.getDni());
+        this.validateField(request.getName(), request.getLastName());
+        repository.save(Employee.builder()
                 .dni(employee.getDni())
-                .salary(salary)
-                .contract(contract)
-                .build();
+                .name(request.getName())
+                .lastName(request.getLastName())
+                .type(employee.getType())
+                .build());
+    }
 
-        employeeRepository.save(newEmployee);
+    @Transactional
+    @Override
+    public String deleteEmployee(String dni) {
+        repository.findByDni(dni).orElseThrow(() -> new NotFoundException("employee not found"));
+        repository.deleteByDni(dni);
+        return dni.substring(5, 8);
     }
 
     @Override
-    public void updateEmployee(EmployeeUpdateDto employee) {
-
-        /* validate dni */
-        employeeValidation.validateDni(employee.getDni());
-
-        /*validate of fields*/
-        employeeValidation.validateFields(
-                EmployeeValidateModel.builder()
-                        .name(employee.getName())
-                        .lastName(employee.getLastName())
-                        .build());
-
-        /*get employee exist*/
-        Employee employeeData = employeeRepository.findByDni(employee.getDni()).orElseThrow(() -> new EmployeeException(""));
-
-        deleteEmployee(employee.getDni()); /*delete employee exist*/
-
-        Employee updateEmployee = Employee
-                .builder()
-                .dni(employeeData.getDni())
-                .name(employee.getName())
-                .lastName(employee.getLastName())
-                .contract(employeeData.getContract())
-                .salary(employeeData.getSalary())
-                .build();
-
-        employeeRepository.save(updateEmployee);
+    public void validateExistEmployee(String dni) {
+        if (repository.existsByDni(dni)) {
+            throw new EmployeeException("the employee exist in the system");
+        }
     }
 
     @Override
-    public void deleteEmployee(Integer dni) {
-        employeeValidation.validateDni(dni);
-        employeeRepository.deleteById(dni);
+    public void validateFormatDni(String dni) {
+        if (dni == null) {
+            throw new EmployeeException("the employee dni is required");
+        }
+        if (dni.contains(".") || dni.isEmpty()) {
+            throw new EmployeeException("the dni format is incorrect");
+        }
+        if (dni.length() != 8) {
+            throw new EmployeeException("the length of dni is incorrect");
+        }
     }
 
     @Override
-    public boolean employeeExist(Integer dni) {
-        return employeeRepository.existsByDni(dni);
+    public void validateField(String name, String lastName) {
+        if (name == null) {
+            throw new EmployeeException("the employee name is required");
+        }
+        if (name.isEmpty()) {
+            throw new EmployeeException("the employee name not is empty");
+        }
+        if (lastName == null) {
+            throw new EmployeeException("the employee lastName is required");
+        }
+        if (lastName.isEmpty()) {
+            throw new EmployeeException("the employee lastName not is empty");
+        }
+        if (!(name.length() >= 4 && lastName.length() >= 4)) {
+            throw new EmployeeException("the employee name length should be 4");
+        }
     }
 
     @Override
-    public Contract getContractEmployee(boolean contract) {
-        return contract ? Contract.HIRED : Contract.EFFECTIVE;
+    public void validateRequest(SaveEmployeeRequest request) {
+        this.validateExistEmployee(request.getDni());
+        this.validateFormatDni(request.getDni());
+        this.validateField(request.getName(), request.getLastName());
     }
-
-    @Override
-    public BigDecimal getSalaryEmployee(boolean type) {
-        return type ? new BigDecimal("500") : new BigDecimal("200");
-    }
-
 }

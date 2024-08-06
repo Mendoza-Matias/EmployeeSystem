@@ -1,40 +1,35 @@
 package com.mmendoza.employee_system.domain.entity;
 
-import com.mmendoza.employee_system.domain.enums.Contract;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import javax.lang.model.element.Name;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "employee")
 
-@Builder
 @Getter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Employee {
 
     @Id
-    private Integer dni;
+    private String dni;
 
     @Column(name = "name")
     private String name;
 
-    @Column(name = "last_name")
+    @Column(name = "lastName")
     private String lastName;
 
-    @Column(name = "salary")
-    private BigDecimal salary;
-
-    @Column(name = "contract")
-    @Enumerated(EnumType.STRING)
-    private Contract contract;
+    @ManyToOne
+    @JoinColumn(name = "type" )
+    private EmployeeType type;
 
     @Transient
-    private boolean isHired; //aux
+    private boolean isHired;
 }
